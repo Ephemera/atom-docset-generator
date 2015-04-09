@@ -30,7 +30,7 @@ def fetch(f):
         _operator = method.find('span', { 'class': 'operator' }).contents[0].strip()
 
         print(_path, _operator, _name)
-        _to_insert.append((_Class + _operator + _name, 'Method', _path + '#'+  _name))
+        _to_insert.append((_Class + _operator + _name, 'Method', _path + '#'+ method['name']))
 
     if len(_to_insert) is not 1:
         cur.executemany('INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?,?,?)', _to_insert)
