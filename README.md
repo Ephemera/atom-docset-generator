@@ -25,6 +25,7 @@ TODO
 ----
 
 Add table of contents support
+Change Atom.docset directory structure for excluding version 
 
 
 
