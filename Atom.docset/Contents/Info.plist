@@ -11,7 +11,7 @@
   <key>isDashDocset</key>
   <true/>
   <key>dashIndexFilePath</key>
-  <string>Atom.html</string>
+  <string>docs/api/v0.190.0/Atom.html</string>
   <key>isJavaScriptEnabled</key>
   <true/>
 </dict>
