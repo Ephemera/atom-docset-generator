@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import re, os, sqlite3
+import sqlite3
 from bs4 import BeautifulSoup
-from urllib import parse
+import json
 
 db = sqlite3.connect('./Atom.docset/Contents/Resources/docSet.dsidx')
 cur = db.cursor()
@@ -15,44 +15,45 @@ cur.execute('CREATE UNIQUE INDEX anchor ON searchIndex (name, type, path);')
 
 docpath = './Atom.docset/Contents/Resources/Documents/'
 
-def fetch(f):
-    filename = os.path.join(root, f)
-    page = open(filename).read()
-    soup = BeautifulSoup(page)
-    _path = filename.replace(docpath, '')
+def fetch():
+    with open('./atom-api.json') as _api:
+        api = json.load(_api)
+
     _to_insert = []
+    for attr, value in api['classes'].items():
+        _name = attr
+        _path = '%s.html' % attr
+        _to_insert.append((_name, 'Class', _path))
 
-    _Class = os.path.splitext(f)[0]
-    _to_insert.append((_Class, 'Class', _path))
+        for method in value['classMethods']:
+            _name = '%s.%s' % (attr, method['name'])
+            _path = '%s.html#%s' % (attr, method['name'])
+            _to_insert.append((_name, 'Method', _path))
 
-    for method in soup.select('.method-signature'):
-        _name = method['name'].replace('instance-', '')
-        _operator = method.find('span', { 'class': 'operator' }).contents[0].strip()
+        for method in value['instanceMethods']:
+            _name = '%s::%s' % (attr, method['name'])
+            _path = '%s.html#instance-%s' % (attr, method['name'])
+            _to_insert.append((_name, 'Method', _path))
 
-        print(_path, _operator, _name)
-        _to_insert.append((_Class + _operator + _name, 'Method', _path + '#'+ method['name']))
+        if len(_to_insert) is not 1:
+            cur.executemany('INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?,?,?)', _to_insert)
 
-    if len(_to_insert) is not 1:
-        cur.executemany('INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?,?,?)', _to_insert)
+        removeUnusableElement('%s%s.html' % (docpath, attr))
 
+def removeUnusableElement(filename):
+    soup = BeautifulSoup(open(filename).read())
     _to_remove = [
             soup.find('div', { 'class': 'top-bar' }),
             soup.find('form'),
             soup.find('footer'),
             soup.find('div', { 'class': 'sidebar' }),
             ]
-
     for r in _to_remove:
         if r:
             r.extract()
-
     with open(filename, 'wb') as file:
         file.write(soup.prettify('utf-8'))
 
-for root, dirs, files in os.walk(docpath):
-    for f in files:
-        if f.endswith('.html'):
-            fetch(f)
-
+fetch()
 db.commit()
 db.close()

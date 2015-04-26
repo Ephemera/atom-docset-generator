@@ -14,7 +14,9 @@ copy:
 	rm -rf ./temp
 
 generate:
+	curl -sOL https://github.com/atom/atom/releases/download/$(CURRENT_VER)/atom-api.json
 	python generator.py
+	rm -f atom-api.json
 
 compress:
 	tar --exclude='.DS_Store' -cvzf Atom.tgz Atom.docset
